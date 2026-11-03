@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line_utils_bonus.c                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rperez-t <rperez-t@student.s19.be>         +#+  +:+       +#+        */
+/*   By: rperez-t <rperez-t@student.42belgium.be>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 14:05:04 by rperez-t          #+#    #+#             */
-/*   Updated: 2023/12/20 11:25:49 by rperez-t         ###   ########.fr       */
+/*   Updated: 2026/11/03 14:34:52 by rperez-t         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,103 +26,102 @@ size_t	ft_strlen(char *str)
 
 char	*ft_strchr(char *str, int c)
 {
-	int		idx;
-	char	character;
-	int		size;
-	char	*address;
-
-	idx = 0;
-	character = c;
 	if (!str)
-		return (0);
-	size = ft_strlen(str);
-	address = &str[size];
-	if (character == '\0')
-		return (address);
-	while (str[idx] != '\0')
+		return (NULL);
+	while (*str)
 	{
-		address = &str[idx];
-		if (str[idx] == character)
-			return (address);
-		idx++;
+		if (*str == (char)c)
+			return (str);
+		str++;
 	}
-	return (0);
+	if ((char)c == '\0')
+		return (str);
+	return (NULL);
 }
 
-char	*ft_strjoin(char *str, char *joinee)
+/*
+** Returns stash + buffer in a new allocation. The old stash is always freed,
+** also when malloc fails, so the caller never has to free it again.
+*/
+char	*ft_strjoin(char *stash, char *buffer)
 {
-	int		vals[3];
-	char	*res;
+	char	*joined;
+	size_t	stash_len;
+	size_t	i;
 
-	if (!str)
+	stash_len = ft_strlen(stash);
+	joined = malloc(stash_len + ft_strlen(buffer) + 1);
+	if (!joined)
 	{
-		str = malloc(CHARSIZE);
-		str[0] = '\0';
+		free(stash);
+		return (NULL);
 	}
-	if (!joinee)
-		return (NULL);
-	vals[2] = ft_strlen(str) + ft_strlen(joinee) + 1;
-	res = malloc(vals[2]);
-	if (res == NULL)
-		return (NULL);
-	vals[0] = -1;
-	vals[1] = 0;
-	if (str)
-		while (str[++vals[0]] != '\0')
-			res[vals[0]] = str[vals[0]];
-	while (joinee[vals[1]] != '\0')
-		res[vals[0]++] = joinee[vals[1]++];
-	vals[2]--;
-	res[vals[2]] = '\0';
-	return (free(str), res);
+	i = 0;
+	while (i < stash_len)
+	{
+		joined[i] = stash[i];
+		i++;
+	}
+	while (*buffer)
+		joined[i++] = *buffer++;
+	joined[i] = '\0';
+	free(stash);
+	return (joined);
 }
 
-char	*ft_isolate_single_line(char *file)
+char	*ft_isolate_single_line(char *stash)
 {
-	int		vals[2];
 	char	*line;
+	size_t	line_len;
+	size_t	i;
 
-	vals[0] = 0;
-	if (!file[vals[0]])
+	if (!stash[0])
 		return (NULL);
-	while (file[vals[0]] && file[vals[0]] != '\n')
-		vals[0]++;
-	vals[1] = vals[0] + 2;
-	line = malloc(vals[1]);
+	line_len = 0;
+	while (stash[line_len] && stash[line_len] != '\n')
+		line_len++;
+	if (stash[line_len] == '\n')
+		line_len++;
+	line = malloc(line_len + 1);
 	if (!line)
 		return (NULL);
-	vals[0] = 0;
-	while (file[vals[0]] && file[vals[0]] != '\n')
+	i = 0;
+	while (i < line_len)
 	{
-		line[vals[0]] = file[vals[0]];
-		vals[0]++;
+		line[i] = stash[i];
+		i++;
 	}
-	if (file[vals[0]] == '\n')
-	{
-		line[vals[0]] = file[vals[0]];
-		vals[0]++;
-	}
-	return (line[vals[0]] = '\0', line);
+	line[i] = '\0';
+	return (line);
 }
 
-char	*ft_get_rest_of_lines(char *file)
+/*
+** Keeps what follows the first '\n' for the next call. Always frees the old
+** stash; returns NULL when nothing is left or when malloc fails.
+*/
+char	*ft_get_rest_of_lines(char *stash)
 {
-	int		vals[3];
-	char	*rest_of_lines;
+	char	*rest;
+	size_t	start;
+	size_t	i;
 
-	vals[0] = 0;
-	while (file[vals[0]] && file[vals[0]] != '\n')
-		vals[0]++;
-	if (!file[vals[0]])
-		return (free(file), NULL);
-	vals[2] = ft_strlen(file) - vals[0] + 1;
-	rest_of_lines = malloc(vals[2]);
-	if (!rest_of_lines)
+	start = 0;
+	while (stash[start] && stash[start] != '\n')
+		start++;
+	if (!stash[start] || !stash[start + 1])
+	{
+		free(stash);
 		return (NULL);
-	vals[0]++;
-	vals[1] = 0;
-	while (file[vals[0]])
-		rest_of_lines[vals[1]++] = file[vals[0]++];
-	rest_of_lines[vals[1]] = '\0';
-	return (free(file), rest_of_lines);
+	}
+	start++;
+	rest = malloc(ft_strlen(stash + start) + 1);
+	if (rest)
+	{
+		i = 0;
+		while (stash[start])
+			rest[i++] = stash[start++];
+		rest[i] = '\0';
+	}
+	free(stash);
+	return (rest);
 }

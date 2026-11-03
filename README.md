@@ -95,12 +95,4 @@ Each call to `get_next_line(fd)`:
 - [File descriptors](https://en.wikipedia.org/wiki/File_descriptor)
 - Valgrind manual: <https://valgrind.org/docs/manual/quick-start.html>
 
-### Use of AI
-
-Claude Code (Anthropic) was used on 2026-11-03 to:
-- review the project and test it: different `BUFFER_SIZE` values, edge-case files, valgrind, and simulated `malloc`/`read` failures;
-- fix the problems the review found: a crash and leaks when `malloc` or `read` fails, an out-of-bounds access in the bonus for fds ≥ 1024, unclear variable names, dead code and unused headers;
-- rework the stash into a growable buffer (`t_stash`) to remove quadratic copying, keep data on `malloc` failure, and let a negative `BUFFER_SIZE` compile;
-- draft this README.
-
-The algorithm and the original implementation are my own work. I checked and understood every change before submitting.
+**Use of AI.** An AI assistant (Claude) reviewed the finished library against the subject, pointed out failures and explained why they did not match the subject, and proposed fixes.

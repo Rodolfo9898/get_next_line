@@ -39,7 +39,7 @@ cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 get_next_line.c get_next_line_utils.c
 cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 get_next_line_bonus.c get_next_line_utils_bonus.c main.c
 ```
 
-`BUFFER_SIZE` is the number of bytes asked from `read()` each time. It is optional and defaults to 1. A value of 0 or less makes the function return `NULL`.
+`BUFFER_SIZE` is the number of bytes asked from `read()` each time. It is optional and defaults to 42. A value of 0 or less makes the function return `NULL`.
 
 Minimal `main.c`:
 
@@ -72,7 +72,7 @@ int	main(int argc, char **argv)
 
 `read()` returns blocks of `BUFFER_SIZE` bytes that do not line up with lines. One block can hold several lines, or only part of one. What was read past the end of the returned line must therefore survive until the next call. It is kept in a **static "stash"**: a `t_stash` in the mandatory part, and an array `t_stash stash[FD_LIMIT]` (one stash per fd) in the bonus. A stash is a growable buffer: `data` is the allocation, `cap` its size, and the bytes not returned yet are the `len` bytes starting at `data + start`.
 
-All five functions live in `get_next_line.c` (and `get_next_line_bonus.c`), with the helpers declared `static`, so only `get_next_line()` is visible outside the file. `get_next_line_utils.c` and `get_next_line_utils_bonus.c` are kept, empty, because the subject requires them.
+`get_next_line()` is the only function in `get_next_line.c` (and `get_next_line_bonus.c`). The four helpers live in `get_next_line_utils.c` (and `get_next_line_utils_bonus.c`) and are declared in the header.
 
 Each call to `get_next_line(fd)`:
 

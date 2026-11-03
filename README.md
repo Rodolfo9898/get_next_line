@@ -70,22 +70,23 @@ int	main(int argc, char **argv)
 
 ## Algorithm
 
-`read()` returns blocks of `BUFFER_SIZE` bytes that do not line up with lines. One block can hold several lines, or only part of one. What was read past the end of the returned line must therefore survive until the next call. It is kept in a **static "stash"**: a `char *` in the mandatory part, and an array `char *stash[FDS_TO_OPEN]` (one stash per fd) in the bonus.
+`read()` returns blocks of `BUFFER_SIZE` bytes that do not line up with lines. One block can hold several lines, or only part of one. What was read past the end of the returned line must therefore survive until the next call. It is kept in a **static "stash"**: a `t_stash` in the mandatory part, and an array `t_stash stash[FD_LIMIT]` (one stash per fd) in the bonus. A stash is a growable buffer: `data` is the allocation, `cap` its size, and the bytes not returned yet are the `len` bytes starting at `data + start`.
+
+All five functions live in `get_next_line.c` (and `get_next_line_bonus.c`), with the helpers declared `static`, so only `get_next_line()` is visible outside the file. `get_next_line_utils.c` and `get_next_line_utils_bonus.c` are kept, empty, because the subject requires them.
 
 Each call to `get_next_line(fd)`:
 
 1. **Validates** the input. A negative fd, an fd outside the bonus array, or a bad `BUFFER_SIZE` returns `NULL`. `read(fd, 0, 0)` then checks that the fd is readable. If not (for example, it was closed), the stash is freed, so a file reopened later on the same fd starts from a clean state.
-2. **Fills the stash** (`ft_read_file`). While the stash contains no `\n` and `read()` has not hit end of file, it reads one block and appends it to the stash. Only the new block is searched for `\n`, because the rest of the stash is already known to have none. It stops as soon as a newline arrives, so it reads as little as possible rather than the whole file.
-3. **Extracts the line** (`ft_isolate_single_line`). It copies the stash up to and including the first `\n`, or the whole stash at end of file. An empty stash means there is nothing left, so it frees the stash and returns `NULL`.
-4. **Keeps the rest** (`ft_get_rest_of_lines`). What follows the `\n` becomes the new stash, and the old one is freed. When nothing follows, the stash becomes `NULL`.
-
-**Memory ownership** is kept simple on purpose. Every helper that receives the stash either returns a new stash or frees the old one, and it does so even when `malloc` or `read` fails. A failure anywhere therefore returns `NULL` without leaking or reusing freed memory.
+2. **Fills the stash** (`ft_read_until_newline`). While the stash contains no `\n` and `read()` has not hit end of file, it makes room for one block (`ft_stash_reserve`) and reads it directly after the stored bytes. Only the new bytes are searched for `\n`, because the older ones are already known to have none. It stops as soon as a newline arrives, so it reads as little as possible rather than the whole file.
+3. **Extracts the line** (`ft_extract_line`). It copies the stored bytes up to and including the first `\n`, or all of them at end of file, into a new string, then simply moves `start` past them. An empty stash at end of file means there is nothing left, so it is freed and `NULL` is returned.
 
 **Why this design:**
 - The static stash is the simplest structure that meets "read as little as possible" and keeps state between calls without a global variable.
-- A plain string, rather than a linked list of blocks, keeps the line search and extraction easy to follow.
+- Returning a line only moves `start`, so the rest is never copied once per line.
+- When the buffer is full, `ft_stash_reserve` moves the stored bytes to a block twice as large as needed. Each byte is therefore copied only a constant number of times on average, and reading is linear in the file size even for a very long line with `BUFFER_SIZE=1`. A plain string joined with every block would copy the whole stash at each `read()`, which is quadratic.
+- The buffer size is tied to the bytes still stored, not to the file size, so a long file does not make it grow.
 
-Its known cost is that each `read()` copies the whole stash once. A very long line read with a tiny `BUFFER_SIZE` therefore takes time quadratic in the line length. With a normal `BUFFER_SIZE` this does not matter.
+**Memory ownership:** the stash owns its buffer. A failed `read()` frees it and returns `NULL`. A failed `malloc` returns `NULL` but keeps the stash intact, so no data is lost and a later call can continue. When the last stored byte is returned, the buffer is freed.
 
 ## Resources
 
@@ -99,6 +100,7 @@ Its known cost is that each `read()` copies the whole stash once. A very long li
 Claude Code (Anthropic) was used on 2026-11-03 to:
 - review the project and test it: different `BUFFER_SIZE` values, edge-case files, valgrind, and simulated `malloc`/`read` failures;
 - fix the problems the review found: a crash and leaks when `malloc` or `read` fails, an out-of-bounds access in the bonus for fds ≥ 1024, unclear variable names, dead code and unused headers;
+- rework the stash into a growable buffer (`t_stash`) to remove quadratic copying, keep data on `malloc` failure, and let a negative `BUFFER_SIZE` compile;
 - draft this README.
 
 The algorithm and the original implementation are my own work. I checked and understood every change before submitting.

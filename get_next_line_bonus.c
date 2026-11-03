@@ -12,69 +12,128 @@
 
 #include "get_next_line_bonus.h"
 
-/*
-** Reads BUFFER_SIZE bytes at a time and appends them to the stash until the
-** stash holds a '\n' or read() reaches EOF. Only the freshly read chunk is
-** searched for '\n', since the old part of the stash is known to have none.
-** Takes ownership of the stash: on any error it is freed and NULL returned.
-*/
-char	*ft_read_file(int fd, char *stash)
+static void	ft_stash_clear(t_stash *stash)
 {
-	char	*buffer;
-	char	*newline;
-	ssize_t	bytes_read;
-
-	buffer = malloc((size_t)BUFFER_SIZE + 1);
-	if (!buffer)
-		return (free(stash), NULL);
-	bytes_read = 1;
-	newline = ft_strchr(stash, '\n');
-	while (!newline && bytes_read > 0)
-	{
-		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		if (bytes_read < 0)
-			break ;
-		buffer[bytes_read] = '\0';
-		stash = ft_strjoin(stash, buffer);
-		if (!stash)
-			break ;
-		newline = ft_strchr(buffer, '\n');
-	}
-	free(buffer);
-	if (bytes_read < 0)
-		return (free(stash), NULL);
-	return (stash);
+	free(stash->data);
+	stash->data = NULL;
+	stash->start = 0;
+	stash->len = 0;
+	stash->cap = 0;
 }
 
 /*
-** One stash per fd. fds outside [0, FDS_TO_OPEN) are rejected before the
+** Makes room for extra bytes after the stored ones. When the space left is
+** too small, the stored bytes move to a new block twice as large as needed,
+** so each byte is copied only a constant number of times on average.
+** On malloc failure the stash is left untouched and 0 is returned.
+*/
+static int	ft_stash_reserve(t_stash *stash, size_t extra)
+{
+	char	*new_data;
+	size_t	new_cap;
+	size_t	i;
+
+	if (stash->start + stash->len + extra <= stash->cap)
+		return (1);
+	new_cap = 2 * (stash->len + extra);
+	new_data = malloc(new_cap);
+	if (!new_data)
+		return (0);
+	i = 0;
+	while (i < stash->len)
+	{
+		new_data[i] = stash->data[stash->start + i];
+		i++;
+	}
+	free(stash->data);
+	stash->data = new_data;
+	stash->start = 0;
+	stash->cap = new_cap;
+	return (1);
+}
+
+/*
+** Returns the first line_len stored bytes as a new string and drops them
+** from the stash. On malloc failure the stash is kept, so no data is lost.
+*/
+static char	*ft_extract_line(t_stash *stash, size_t line_len)
+{
+	char	*line;
+	size_t	i;
+
+	line = malloc(line_len + 1);
+	if (!line)
+		return (NULL);
+	i = 0;
+	while (i < line_len)
+	{
+		line[i] = stash->data[stash->start + i];
+		i++;
+	}
+	line[i] = '\0';
+	stash->start += line_len;
+	stash->len -= line_len;
+	if (stash->len == 0)
+		ft_stash_clear(stash);
+	return (line);
+}
+
+/*
+** Searches the stash for a '\n' and, while there is none and read() has not
+** reached end of file, appends one BUFFER_SIZE-byte block. newline is never
+** reset, so each byte is searched only once. Returns the length of the next
+** line (0 when nothing is left), or -1 on error. A read error drops the
+** stash; a malloc error keeps it. read_size comes from get_next_line(),
+** which checks BUFFER_SIZE first, so a negative BUFFER_SIZE still compiles.
+*/
+static ssize_t	ft_read_until_newline(int fd, t_stash *stash, size_t read_size)
+{
+	size_t	newline;
+	ssize_t	bytes_read;
+
+	newline = 0;
+	bytes_read = 1;
+	while (bytes_read > 0)
+	{
+		while (newline < stash->len
+			&& stash->data[stash->start + newline] != '\n')
+			newline++;
+		if (newline < stash->len)
+			return (newline + 1);
+		if (!ft_stash_reserve(stash, read_size))
+			return (-1);
+		bytes_read = read(fd, stash->data + stash->start + stash->len,
+				read_size);
+		if (bytes_read < 0)
+			return (ft_stash_clear(stash), -1);
+		stash->len += bytes_read;
+	}
+	if (stash->len == 0)
+		ft_stash_clear(stash);
+	return (stash->len);
+}
+
+/*
+** One stash per fd. fds outside [0, FD_LIMIT) are rejected before the
 ** array is indexed. read(fd, 0, 0) fails on a closed or invalid fd: drop
 ** that fd's stash so a file reopened on the same fd starts clean.
 */
 char	*get_next_line(int fd)
 {
-	static char	*stash[FDS_TO_OPEN];
-	char		*line;
+	static t_stash	stash[FD_LIMIT];
+	ssize_t			line_len;
 
-	if (fd < 0 || fd >= FDS_TO_OPEN || BUFFER_SIZE <= 0
+	if (fd < 0 || fd >= FD_LIMIT || BUFFER_SIZE <= 0
 		|| BUFFER_SIZE >= INT_MAX)
 		return (NULL);
 	if (read(fd, 0, 0) < 0)
 	{
-		free(stash[fd]);
-		stash[fd] = NULL;
+		ft_stash_clear(&stash[fd]);
 		return (NULL);
 	}
-	stash[fd] = ft_read_file(fd, stash[fd]);
-	if (!stash[fd])
+	line_len = ft_read_until_newline(fd, &stash[fd],
+			BUFFER_SIZE);
+	if (line_len <= 0)
 		return (NULL);
-	line = ft_isolate_single_line(stash[fd]);
-	if (!line)
-	{
-		free(stash[fd]);
-		stash[fd] = NULL;
-		return (NULL);
-	}
-	stash[fd] = ft_get_rest_of_lines(stash[fd]);
-	return (line);
+	return (ft_extract_line(&stash[fd], line_len));
 }

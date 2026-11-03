@@ -21,12 +21,18 @@
 # include <unistd.h>
 # include <limits.h>
 
+/*
+** Bytes read but not returned yet: the len bytes starting at data + start.
+** cap is the size of the data allocation.
+*/
+typedef struct s_stash
+{
+	char	*data;
+	size_t	start;
+	size_t	len;
+	size_t	cap;
+}	t_stash;
+
 char	*get_next_line(int fd);
-char	*ft_read_file(int fd, char *stash);
-char	*ft_strchr(char *str, int c);
-char	*ft_strjoin(char *stash, char *buffer);
-size_t	ft_strlen(char *str);
-char	*ft_isolate_single_line(char *stash);
-char	*ft_get_rest_of_lines(char *stash);
 
 #endif

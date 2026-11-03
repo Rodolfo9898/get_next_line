@@ -6,7 +6,7 @@
 /*   By: rperez-t <rperez-t@student.42belgium.be>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/11 16:14:32 by rperez-t          #+#    #+#             */
-/*   Updated: 2026/11/03 16:15:46 by rperez-t         ###   ########.fr       */
+/*   Updated: 2026/11/03 20:49:24 by rperez-t         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,25 +22,14 @@ void	ft_stash_clear(t_stash *stash)
 }
 
 /*
-** Makes room for extra bytes after the stored ones. When the space left is
-** too small, the stored bytes move to the front of the block if they fit
-** there, else to a new block twice as large as needed, so each byte is
-** copied only a constant number of times on average. Copying forwards is
+** Moves the stored bytes to the start of new_data, which is either a new
+** block (the old one is then freed) or the same one. Copying forwards is
 ** safe when the block is reused, because the bytes only move to the left.
-** On malloc failure the stash is left untouched and 0 is returned.
 */
-int	ft_stash_reserve(t_stash *stash, size_t extra)
+static void	ft_stash_move(t_stash *stash, char *new_data)
 {
-	char	*new_data;
 	size_t	i;
 
-	if (stash->start + stash->len + extra <= stash->cap)
-		return (1);
-	new_data = stash->data;
-	if (stash->len + extra > stash->cap)
-		new_data = malloc(2 * (stash->len + extra));
-	if (!new_data)
-		return (0);
 	i = 0;
 	while (i < stash->len)
 	{
@@ -48,12 +37,39 @@ int	ft_stash_reserve(t_stash *stash, size_t extra)
 		i++;
 	}
 	if (new_data != stash->data)
-	{
 		free(stash->data);
-		stash->cap = 2 * (stash->len + extra);
-	}
 	stash->data = new_data;
 	stash->start = 0;
+}
+
+/*
+** Makes room for extra bytes after the stored ones. The stored bytes move
+** to a new block twice as large as needed when they do not fit in the
+** current one, or when it is over four times larger than needed (after a
+** long line), so the block stays proportional to the bytes still stored.
+** Otherwise, if only the space at the end is too small, they move to the
+** front of the same block. Each byte is copied only a constant number of
+** times on average. If a shrink fails, the block is simply reused. If a
+** grow fails, the stash is left untouched and 0 is returned.
+*/
+int	ft_stash_reserve(t_stash *stash, size_t extra)
+{
+	char	*new_data;
+	size_t	need;
+
+	need = stash->len + extra;
+	if (stash->start + need <= stash->cap && 4 * need >= stash->cap)
+		return (1);
+	new_data = NULL;
+	if (need > stash->cap || 4 * need < stash->cap)
+		new_data = malloc(2 * need);
+	if (!new_data && need > stash->cap)
+		return (0);
+	if (new_data)
+		stash->cap = 2 * need;
+	else
+		new_data = stash->data;
+	ft_stash_move(stash, new_data);
 	return (1);
 }
 

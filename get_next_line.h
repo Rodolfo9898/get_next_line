@@ -6,7 +6,7 @@
 /*   By: rperez-t <rperez-t@student.42belgium.be>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/08 09:32:03 by rperez-t          #+#    #+#             */
-/*   Updated: 2026/11/03 16:15:46 by rperez-t         ###   ########.fr       */
+/*   Updated: 2026/11/03 20:49:24 by rperez-t         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,8 @@
 
 /*
 ** Bytes read but not returned yet: the len bytes starting at data + start.
-** cap is the size of the data allocation.
+** cap is the size of the data allocation. fd is the descriptor those
+** bytes were read from.
 */
 typedef struct s_stash
 {
@@ -31,6 +32,7 @@ typedef struct s_stash
 	size_t	start;
 	size_t	len;
 	size_t	cap;
+	int		fd;
 }	t_stash;
 
 void	ft_stash_clear(t_stash *stash);

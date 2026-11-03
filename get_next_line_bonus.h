@@ -6,7 +6,7 @@
 /*   By: rperez-t <rperez-t@student.42belgium.be>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 14:04:40 by rperez-t          #+#    #+#             */
-/*   Updated: 2026/11/03 16:15:46 by rperez-t         ###   ########.fr       */
+/*   Updated: 2026/11/03 20:49:24 by rperez-t         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,26 +22,18 @@
 # endif
 
 /*
-** get_next_line() accepts the fds 0 to FD_LIMIT - 1. macOS defines OPEN_MAX
-** (10240) in <limits.h>; glibc leaves it undefined because the Linux limit
-** is set at run time, so fall back to the usual Linux default of 1024.
-*/
-# ifdef OPEN_MAX
-#  define FD_LIMIT OPEN_MAX
-# else
-#  define FD_LIMIT 1024
-# endif
-
-/*
 ** Bytes read but not returned yet: the len bytes starting at data + start.
-** cap is the size of the data allocation.
+** cap is the size of the data allocation. fd is the descriptor those
+** bytes were read from, and next links the stashes of the other fds.
 */
 typedef struct s_stash
 {
-	char	*data;
-	size_t	start;
-	size_t	len;
-	size_t	cap;
+	char			*data;
+	size_t			start;
+	size_t			len;
+	size_t			cap;
+	int				fd;
+	struct s_stash	*next;
 }	t_stash;
 
 void	ft_stash_clear(t_stash *stash);

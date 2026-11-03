@@ -13,18 +13,24 @@
 #ifndef GET_NEXT_LINE_BONUS_H
 # define GET_NEXT_LINE_BONUS_H
 
+# include <stdlib.h>
+# include <unistd.h>
+# include <limits.h>
+
 # ifndef BUFFER_SIZE
 #  define BUFFER_SIZE 42
 # endif
 
-/* get_next_line() accepts the fds 0 to FD_LIMIT - 1. */
-# ifndef FD_LIMIT
+/*
+** get_next_line() accepts the fds 0 to FD_LIMIT - 1. macOS defines OPEN_MAX
+** (10240) in <limits.h>; glibc leaves it undefined because the Linux limit
+** is set at run time, so fall back to the usual Linux default of 1024.
+*/
+# ifdef OPEN_MAX
+#  define FD_LIMIT OPEN_MAX
+# else
 #  define FD_LIMIT 1024
 # endif
-
-# include <stdlib.h>
-# include <unistd.h>
-# include <limits.h>
 
 /*
 ** Bytes read but not returned yet: the len bytes starting at data + start.

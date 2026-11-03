@@ -23,20 +23,22 @@ void	ft_stash_clear(t_stash *stash)
 
 /*
 ** Makes room for extra bytes after the stored ones. When the space left is
-** too small, the stored bytes move to a new block twice as large as needed,
-** so each byte is copied only a constant number of times on average.
+** too small, the stored bytes move to the front of the block if they fit
+** there, else to a new block twice as large as needed, so each byte is
+** copied only a constant number of times on average. Copying forwards is
+** safe when the block is reused, because the bytes only move to the left.
 ** On malloc failure the stash is left untouched and 0 is returned.
 */
 int	ft_stash_reserve(t_stash *stash, size_t extra)
 {
 	char	*new_data;
-	size_t	new_cap;
 	size_t	i;
 
 	if (stash->start + stash->len + extra <= stash->cap)
 		return (1);
-	new_cap = 2 * (stash->len + extra);
-	new_data = malloc(new_cap);
+	new_data = stash->data;
+	if (stash->len + extra > stash->cap)
+		new_data = malloc(2 * (stash->len + extra));
 	if (!new_data)
 		return (0);
 	i = 0;
@@ -45,16 +47,20 @@ int	ft_stash_reserve(t_stash *stash, size_t extra)
 		new_data[i] = stash->data[stash->start + i];
 		i++;
 	}
-	free(stash->data);
+	if (new_data != stash->data)
+	{
+		free(stash->data);
+		stash->cap = 2 * (stash->len + extra);
+	}
 	stash->data = new_data;
 	stash->start = 0;
-	stash->cap = new_cap;
 	return (1);
 }
 
 /*
 ** Returns the first line_len stored bytes as a new string and drops them
-** from the stash. On malloc failure the stash is kept, so no data is lost.
+** from the stash. On malloc failure the stash is kept, so no data is lost
+** and a later call returns the same line.
 */
 char	*ft_extract_line(t_stash *stash, size_t line_len)
 {
@@ -82,9 +88,12 @@ char	*ft_extract_line(t_stash *stash, size_t line_len)
 ** Searches the stash for a '\n' and, while there is none and read() has not
 ** reached end of file, appends one BUFFER_SIZE-byte block. newline is never
 ** reset, so each byte is searched only once. Returns the length of the next
-** line (0 when nothing is left), or -1 on error. A read error drops the
-** stash; a malloc error keeps it. read_size comes from get_next_line(),
-** which checks BUFFER_SIZE first, so a negative BUFFER_SIZE still compiles.
+** line (0 when nothing is left; get_next_line() then frees the stash), or
+** -1 on error. A read error drops the stash, because the fd may be
+** unusable. A malloc error keeps it: the fd position is past the stored
+** bytes, so dropping them would lose data.
+** read_size comes from get_next_line(), which checks BUFFER_SIZE first, so
+** a negative BUFFER_SIZE still compiles.
 */
 ssize_t	ft_read_until_newline(int fd, t_stash *stash, size_t read_size)
 {
@@ -105,10 +114,11 @@ ssize_t	ft_read_until_newline(int fd, t_stash *stash, size_t read_size)
 		bytes_read = read(fd, stash->data + stash->start + stash->len,
 				read_size);
 		if (bytes_read < 0)
-			return (ft_stash_clear(stash), -1);
+		{
+			ft_stash_clear(stash);
+			return (-1);
+		}
 		stash->len += bytes_read;
 	}
-	if (stash->len == 0)
-		ft_stash_clear(stash);
 	return (stash->len);
 }

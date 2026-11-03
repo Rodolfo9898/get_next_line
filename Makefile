@@ -19,10 +19,11 @@ AR			= ar rcs
 RM			= rm -f
 
 # make BUFFER_SIZE=42 overrides the default from the header.
-# Run "make re" after changing it: objects are not rebuilt on their own.
+# The stamp file name holds the value, so changing it rebuilds the objects.
 ifdef BUFFER_SIZE
 CFLAGS		+= -D BUFFER_SIZE=$(BUFFER_SIZE)
 endif
+STAMP		= .buffer_size_$(or $(BUFFER_SIZE),default)
 
 SRCS		= get_next_line.c get_next_line_utils.c
 BONUS_SRCS	= get_next_line_bonus.c get_next_line_utils_bonus.c
@@ -40,8 +41,12 @@ bonus: $(BONUS_NAME)
 $(BONUS_NAME): $(BONUS_OBJS)
 	$(AR) $(BONUS_NAME) $(BONUS_OBJS)
 
-$(OBJS): get_next_line.h
-$(BONUS_OBJS): get_next_line_bonus.h
+$(OBJS): get_next_line.h $(STAMP)
+$(BONUS_OBJS): get_next_line_bonus.h $(STAMP)
+
+$(STAMP):
+	@$(RM) .buffer_size_*
+	@touch $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -50,7 +55,7 @@ clean:
 	$(RM) $(OBJS) $(BONUS_OBJS)
 
 fclean: clean
-	$(RM) $(NAME) $(BONUS_NAME)
+	$(RM) $(NAME) $(BONUS_NAME) .buffer_size_*
 
 re: fclean all
 

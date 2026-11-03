@@ -2,6 +2,7 @@
 *.o
 *.a
 a.out
+.buffer_size_*
 
 # editor and OS files
 .DS_Store

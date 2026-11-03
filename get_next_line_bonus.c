@@ -32,6 +32,8 @@ char	*get_next_line(int fd)
 	}
 	line_len = ft_read_until_newline(fd, &stash[fd],
 			BUFFER_SIZE);
+	if (line_len == 0)
+		ft_stash_clear(&stash[fd]);
 	if (line_len <= 0)
 		return (NULL);
 	return (ft_extract_line(&stash[fd], line_len));

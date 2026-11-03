@@ -13,11 +13,13 @@
 #include "get_next_line.h"
 
 /*
-** The stash only ever holds bytes from stash.fd. read(fd, 0, 0) fails on a
-** closed or invalid fd: if that is stash.fd, drop the bytes so that a file
-** reopened on the same fd starts from a clean state; a bad call on another
-** fd keeps them. A call on another, valid fd drops them before reading, so
-** lines from two fds are never mixed (reading several fds is the bonus).
+** The stash only ever holds bytes read from stash.fd. read(fd, 0, 0) tells
+** whether fd can be read:
+** - fd unreadable and fd == stash.fd: drop the bytes, so a file reopened
+**   on the same fd starts clean;
+** - fd unreadable and fd != stash.fd: keep the bytes;
+** - fd readable and fd != stash.fd: drop the bytes before reading, so two
+**   fds never mix (reading several fds at once is the bonus).
 */
 char	*get_next_line(int fd)
 {

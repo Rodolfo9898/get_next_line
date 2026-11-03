@@ -43,33 +43,40 @@ static void	gnl_stash_move(t_stash *stash, char *new_data)
 }
 
 /*
-** Makes room for extra bytes after the stored ones. The stored bytes move
-** to a new block twice as large as needed when they do not fit in the
-** current one, or when it is over four times larger than needed (after a
-** long line), so the block stays proportional to the bytes still stored.
-** Otherwise, if only the space at the end is too small, they move to the
-** front of the same block. Each byte is copied only a constant number of
-** times on average. If a shrink fails, the block is simply reused. If a
-** grow fails, the stash is left untouched and 0 is returned.
+** Makes room for extra bytes after the stored ones (need bytes in all):
+** - grow: need is more than the block holds, so the bytes move to a new
+**   block of 2 * need;
+** - shrink: the block is over four times larger than need (after a long
+**   line), so they move to a block of 2 * need; if that malloc fails, the
+**   old block is simply kept;
+** - compact: the block is big enough but the free space after start is
+**   not, so the bytes move to the front of the same block.
+** Each byte is copied only a constant number of times on average.
+** need is capped at a quarter of the largest size_t, so 4 * need cannot
+** overflow. Returns 0, with the stash untouched, if a grow is impossible.
 */
 int	gnl_stash_reserve(t_stash *stash, size_t extra)
 {
 	char	*new_data;
 	size_t	need;
 
-	need = stash->len + extra;
-	if (stash->start + need <= stash->cap && 4 * need >= stash->cap)
-		return (1);
-	new_data = NULL;
-	if (need > stash->cap || 4 * need < stash->cap)
-		new_data = malloc(2 * need);
-	if (!new_data && need > stash->cap)
+	if (extra > (size_t)-1 / 4 - stash->len)
 		return (0);
-	if (new_data)
-		stash->cap = 2 * need;
-	else
-		new_data = stash->data;
-	gnl_stash_move(stash, new_data);
+	need = stash->len + extra;
+	if (need > stash->cap || 4 * need < stash->cap)
+	{
+		new_data = malloc(2 * need);
+		if (new_data)
+		{
+			stash->cap = 2 * need;
+			gnl_stash_move(stash, new_data);
+			return (1);
+		}
+		if (need > stash->cap)
+			return (0);
+	}
+	if (stash->start + need > stash->cap)
+		gnl_stash_move(stash, stash->data);
 	return (1);
 }
 

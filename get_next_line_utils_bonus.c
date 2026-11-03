@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line_utils_bonus.c                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rperez-t <rperez-t@student.42belgium.be    +#+  +:+       +#+        */
+/*   By: rperez-t <rperez-t@student.42belgium.be>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/15 14:05:04 by rperez-t          #+#    #+#             */
-/*   Updated: 2026/11/03 22:07:54 by rperez-t         ###   ########.fr       */
+/*   Updated: 2026/11/03 22:58:06 by rperez-t         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line_bonus.h"
 
-void	ft_stash_clear(t_stash *stash)
+void	gnl_stash_clear(t_stash *stash)
 {
 	free(stash->data);
 	stash->data = NULL;
@@ -26,7 +26,7 @@ void	ft_stash_clear(t_stash *stash)
 ** block (the old one is then freed) or the same one. Copying forwards is
 ** safe when the block is reused, because the bytes only move to the left.
 */
-static void	ft_stash_move(t_stash *stash, char *new_data)
+static void	gnl_stash_move(t_stash *stash, char *new_data)
 {
 	size_t	i;
 
@@ -52,7 +52,7 @@ static void	ft_stash_move(t_stash *stash, char *new_data)
 ** times on average. If a shrink fails, the block is simply reused. If a
 ** grow fails, the stash is left untouched and 0 is returned.
 */
-int	ft_stash_reserve(t_stash *stash, size_t extra)
+int	gnl_stash_reserve(t_stash *stash, size_t extra)
 {
 	char	*new_data;
 	size_t	need;
@@ -69,7 +69,7 @@ int	ft_stash_reserve(t_stash *stash, size_t extra)
 		stash->cap = 2 * need;
 	else
 		new_data = stash->data;
-	ft_stash_move(stash, new_data);
+	gnl_stash_move(stash, new_data);
 	return (1);
 }
 
@@ -78,7 +78,7 @@ int	ft_stash_reserve(t_stash *stash, size_t extra)
 ** from the stash. On malloc failure the stash is kept, so no data is lost
 ** and a later call returns the same line.
 */
-char	*ft_extract_line(t_stash *stash, size_t line_len)
+char	*gnl_extract_line(t_stash *stash, size_t line_len)
 {
 	char	*line;
 	size_t	i;
@@ -96,13 +96,13 @@ char	*ft_extract_line(t_stash *stash, size_t line_len)
 	stash->start += line_len;
 	stash->len -= line_len;
 	if (stash->len == 0)
-		ft_stash_clear(stash);
+		gnl_stash_clear(stash);
 	return (line);
 }
 
 /*
 ** Searches the stash for a '\n' and, while there is none and read() has not
-** reached end of file, appends one BUFFER_SIZE-byte block. newline is never
+** reached end of file, appends one BUFFER_SIZE-byte block. scanned is never
 ** reset, so each byte is searched only once. Returns the length of the next
 ** line (0 when nothing is left; get_next_line() then frees the stash), or
 ** -1 on error. A read error drops the stash, because the fd may be
@@ -111,27 +111,27 @@ char	*ft_extract_line(t_stash *stash, size_t line_len)
 ** read_size comes from get_next_line(), which checks BUFFER_SIZE first, so
 ** a negative BUFFER_SIZE still compiles.
 */
-ssize_t	ft_read_until_newline(int fd, t_stash *stash, size_t read_size)
+ssize_t	gnl_read_until_newline(int fd, t_stash *stash, size_t read_size)
 {
-	size_t	newline;
+	size_t	scanned;
 	ssize_t	bytes_read;
 
-	newline = 0;
+	scanned = 0;
 	bytes_read = 1;
 	while (bytes_read > 0)
 	{
-		while (newline < stash->len
-			&& stash->data[stash->start + newline] != '\n')
-			newline++;
-		if (newline < stash->len)
-			return (newline + 1);
-		if (!ft_stash_reserve(stash, read_size))
+		while (scanned < stash->len
+			&& stash->data[stash->start + scanned] != '\n')
+			scanned++;
+		if (scanned < stash->len)
+			return (scanned + 1);
+		if (!gnl_stash_reserve(stash, read_size))
 			return (-1);
 		bytes_read = read(fd, stash->data + stash->start + stash->len,
 				read_size);
 		if (bytes_read < 0)
 		{
-			ft_stash_clear(stash);
+			gnl_stash_clear(stash);
 			return (-1);
 		}
 		stash->len += bytes_read;

@@ -41,6 +41,8 @@ cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 get_next_line_bonus.c get_next_line_u
 
 `BUFFER_SIZE` is the number of bytes asked from `read()` each time. It is optional and defaults to 42. A value of 0 or less makes the function return `NULL`.
 
+The mandatory version keeps the bytes of only one fd at a time: calling it on another fd drops what was stored for the previous one, so read each fd to the end before switching. Use the bonus version to read several fds in turn.
+
 Minimal `main.c`:
 
 ```c
@@ -72,19 +74,19 @@ int	main(int argc, char **argv)
 
 `read()` returns blocks of `BUFFER_SIZE` bytes that do not line up with lines. One block can hold several lines, or only part of one. What was read past the end of the returned line must therefore survive until the next call. It is kept in a **static "stash"**: a single `t_stash` in the mandatory part, and in the bonus a linked list of `t_stash` nodes, one per fd that has bytes stored, reached from one static pointer. The list has no fixed size, so any fd the system hands out works (a fixed array would have to guess the fd limit, which Linux sets at run time). A node is added on the first call for its fd and removed as soon as its buffer is freed, so finished fds cost nothing. A stash is a growable buffer: `data` is the allocation, `cap` its size, and the bytes not returned yet are the `len` bytes starting at `data + start`.
 
-`get_next_line()` is the only function in `get_next_line.c`. `get_next_line_bonus.c` adds two static list helpers: `ft_get_stash` (find or add the node of an fd) and `ft_remove_stash` (unlink and free it). The four stash helpers live in `get_next_line_utils.c` (and `get_next_line_utils_bonus.c`) and are declared in the header.
+`get_next_line()` is the only function in `get_next_line.c`. `get_next_line_bonus.c` adds two static list helpers: `gnl_get_stash` (find or add the node of an fd) and `gnl_remove_stash` (unlink and free it). The four stash helpers live in `get_next_line_utils.c` (and `get_next_line_utils_bonus.c`) and are declared in the header.
 
 Each call to `get_next_line(fd)`:
 
 1. **Validates** the input. A negative fd or a bad `BUFFER_SIZE` returns `NULL`. `read(fd, 0, 0)` then checks that the fd is readable. If not (for example, it was closed), the stash of that fd is freed, so a file reopened later on the same fd starts from a clean state. The mandatory stash records which fd its bytes came from: a bad call on another fd keeps them, and a call on another, valid fd drops them before reading, so lines from two fds are never mixed (reading several fds at once is what the bonus adds).
-2. **Fills the stash** (`ft_read_until_newline`). While the stash contains no `\n` and `read()` has not hit end of file, it makes room for one block (`ft_stash_reserve`) and reads it directly after the stored bytes. Only the new bytes are searched for `\n`, because the older ones are already known to have none. It stops as soon as a newline arrives, so it reads as little as possible rather than the whole file.
+2. **Fills the stash** (`gnl_read_until_newline`). While the stash contains no `\n` and `read()` has not hit end of file, it makes room for one block (`gnl_stash_reserve`) and reads it directly after the stored bytes. Only the new bytes are searched for `\n`, because the older ones are already known to have none. It stops as soon as a newline arrives, so it reads as little as possible rather than the whole file.
    If the stash is still empty at end of file, there is nothing left: `get_next_line()` frees it and returns `NULL`.
-3. **Extracts the line** (`ft_extract_line`). It copies the stored bytes up to and including the first `\n`, or all of them at end of file, into a new string, then simply moves `start` past them. When the last stored byte is returned, the buffer is freed (and, in the bonus, the node of that fd).
+3. **Extracts the line** (`gnl_extract_line`). It copies the stored bytes up to and including the first `\n`, or all of them at end of file, into a new string, then simply moves `start` past them. When the last stored byte is returned, the buffer is freed (and, in the bonus, the node of that fd).
 
 **Why this design:**
 - The static stash is the simplest structure that meets "read as little as possible" and keeps state between calls without a global variable.
 - Returning a line only moves `start`, so the rest is never copied once per line.
-- When there is no room after the stored bytes, `ft_stash_reserve` moves them to the front of the same block if they fit there, and only otherwise to a new block twice as large as needed. Each byte is therefore copied only a constant number of times on average, and reading is linear in the file size even for a very long line with `BUFFER_SIZE=1`. A plain string joined with every block would copy the whole stash at each `read()`, which is quadratic.
+- When there is no room after the stored bytes, `gnl_stash_reserve` moves them to the front of the same block if they fit there, and only otherwise to a new block twice as large as needed. Each byte is therefore copied only a constant number of times on average, and reading is linear in the file size even for a very long line with `BUFFER_SIZE=1`. A plain string joined with every block would copy the whole stash at each `read()`, which is quadratic.
 - The buffer size is tied to the bytes still stored, not to the file size, so a long file does not make it grow. After a very long line the block can be much larger than what is left; once it is over four times larger than needed, the next refill moves the bytes to a block of the right size, so that memory is given back.
 
 **Memory ownership:** the stash owns its buffer. A failed `read()` frees it and returns `NULL`. A failed `malloc` also returns `NULL` but keeps the stash: the fd has already moved past the stored bytes, so freeing them would lose data, and a later call returns the same line again. A caller that wants to tell a `malloc` failure from end of file can check `errno`, which `malloc` sets to `ENOMEM`. When the last stored byte is returned, the buffer is freed.
@@ -96,4 +98,6 @@ Each call to `get_next_line(fd)`:
 - [File descriptors](https://en.wikipedia.org/wiki/File_descriptor)
 - Valgrind manual: <https://valgrind.org/docs/manual/quick-start.html>
 
-**Use of AI.** An AI assistant (Claude) reviewed the finished library against the subject, pointed out failures and explained why they did not match the subject, and proposed fixes.
+**Use of AI.** An AI assistant (Claude) was used for review, not to write the algorithm:
+- it checked the finished library against the subject and the Norm, tested it (different `BUFFER_SIZE` values, stdin and pipes, bad fds, valgrind, simulated `malloc` failures), pointed out failures and explained why they did not match the subject, and proposed fixes;
+- after the final review it made small cosmetic edits: the `gnl_` prefix of the helper functions (so they cannot clash with a libft `ft_` function), the name of the `scanned` counter in `gnl_read_until_newline`, the email in the 42 headers, and the note above on the single-fd limit of the mandatory part.

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rperez-t <rperez-t@student.42belgium.be    +#+  +:+       +#+        */
+/*   By: rperez-t <rperez-t@student.42belgium.be>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/08 13:35:33 by rperez-t          #+#    #+#             */
-/*   Updated: 2026/11/03 22:08:04 by rperez-t         ###   ########.fr       */
+/*   Updated: 2026/11/03 22:58:06 by rperez-t         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,16 +29,16 @@ char	*get_next_line(int fd)
 	if (read(fd, 0, 0) < 0)
 	{
 		if (fd == stash.fd)
-			ft_stash_clear(&stash);
+			gnl_stash_clear(&stash);
 		return (NULL);
 	}
 	if (fd != stash.fd)
-		ft_stash_clear(&stash);
+		gnl_stash_clear(&stash);
 	stash.fd = fd;
-	line_len = ft_read_until_newline(fd, &stash, BUFFER_SIZE);
+	line_len = gnl_read_until_newline(fd, &stash, BUFFER_SIZE);
 	if (line_len == 0)
-		ft_stash_clear(&stash);
+		gnl_stash_clear(&stash);
 	if (line_len <= 0)
 		return (NULL);
-	return (ft_extract_line(&stash, line_len));
+	return (gnl_extract_line(&stash, line_len));
 }

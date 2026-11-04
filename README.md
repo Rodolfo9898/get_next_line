@@ -98,6 +98,4 @@ Each call to `get_next_line(fd)`:
 - [File descriptors](https://en.wikipedia.org/wiki/File_descriptor)
 - Valgrind manual: <https://valgrind.org/docs/manual/quick-start.html>
 
-**Use of AI.** An AI assistant (Claude) was used for review, not to write the algorithm:
-- it checked the finished library against the subject and the Norm, tested it (different `BUFFER_SIZE` values, stdin and pipes, bad fds, valgrind, simulated `malloc` failures), pointed out failures and explained why they did not match the subject, and proposed fixes;
-- after the final review it made small cosmetic edits: the `gnl_` prefix of the helper functions (so they cannot clash with a libft `ft_` function), the name of the `scanned` counter in `gnl_read_until_newline`, the email in the 42 headers, and the note above on the single-fd limit of the mandatory part.
+**Use of AI.** An AI assistant (Claude) was used for review,it checked the finished library against the subject and the Norm, pointed out failures and explained why they did not match the subject.

@@ -11,27 +11,8 @@
 # **************************************************************************** #
 
 include mk/colors.mk
-
-NAME		= get_next_line.a
-BONUS_NAME	= get_next_line_bonus.a
-
-CC			= cc
-CFLAGS		= -Wall -Wextra -Werror
-AR			= ar rcs
-RM			= rm -f
-
-# make BUFFER_SIZE=42 overrides the default from the header.
-# The stamp file name holds the value, so changing it rebuilds the objects.
-ifdef BUFFER_SIZE
-CFLAGS		+= -D BUFFER_SIZE=$(BUFFER_SIZE)
-endif
-STAMP		= .buffer_size_$(or $(BUFFER_SIZE),default)
-
-SRCS		= get_next_line.c get_next_line_utils.c
-BONUS_SRCS	= get_next_line_bonus.c get_next_line_utils_bonus.c
-
-OBJS		= $(SRCS:.c=.o)
-BONUS_OBJS	= $(BONUS_SRCS:.c=.o)
+include mk/config.mk
+include mk/sources.mk
 
 all: $(NAME)
 

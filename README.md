@@ -29,6 +29,10 @@ make clean / fclean     # remove objects / objects and archives
 cc -Wall -Wextra -Werror main.c get_next_line.a
 ```
 
+The output is coloured (`mk/colors.mk`): commands in green, errors in red, warnings in
+yellow. `clean` and `fclean` say in blue what they remove, or warn in yellow when there
+is nothing to remove.
+
 Or compile the sources directly together with your own `main`:
 
 ```sh

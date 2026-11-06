@@ -10,6 +10,8 @@
 #                                                                              #
 # **************************************************************************** #
 
+include mk/colors.mk
+
 NAME		= get_next_line.a
 BONUS_NAME	= get_next_line_bonus.a
 
@@ -34,12 +36,12 @@ BONUS_OBJS	= $(BONUS_SRCS:.c=.o)
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(AR) $(NAME) $(OBJS)
+	@$(call run,$(AR) $(NAME) $(OBJS))
 
 bonus: $(BONUS_NAME)
 
 $(BONUS_NAME): $(BONUS_OBJS)
-	$(AR) $(BONUS_NAME) $(BONUS_OBJS)
+	@$(call run,$(AR) $(BONUS_NAME) $(BONUS_OBJS))
 
 $(OBJS): get_next_line.h $(STAMP)
 $(BONUS_OBJS): get_next_line_bonus.h $(STAMP)
@@ -49,13 +51,16 @@ $(STAMP):
 	@touch $@
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	@$(call run,$(CC) $(CFLAGS) -c $< -o $@)
 
 clean:
-	$(RM) $(OBJS) $(BONUS_OBJS)
+	@$(call remove,$(OBJS),Removing the objects of get_next_line,objects of get_next_line)
+	@$(call remove,$(BONUS_OBJS),Removing the bonus objects of get_next_line,bonus objects of get_next_line)
 
 fclean: clean
-	$(RM) $(NAME) $(BONUS_NAME) .buffer_size_*
+	@$(call remove,$(NAME),Removing the library $(NAME))
+	@$(call remove,$(BONUS_NAME),Removing the library $(BONUS_NAME))
+	@$(call remove,.buffer_size_*,Removing the stamp of the last BUFFER_SIZE,stamp of the last BUFFER_SIZE)
 
 re: fclean all
 

@@ -31,12 +31,17 @@ $(STAMP):
 	@$(RM) .buffer_size_*
 	@touch $@
 
-%.o: %.c
+$(OBJ_DIR)/%.o: %.c
+	@mkdir -p $(@D)
+	@$(call run,$(CC) $(CFLAGS) -c $< -o $@)
+
+$(OBJ_BONUS_DIR)/%.o: %.c
+	@mkdir -p $(@D)
 	@$(call run,$(CC) $(CFLAGS) -c $< -o $@)
 
 clean:
-	@$(call remove,$(OBJS),Removing the objects of get_next_line,objects of get_next_line)
-	@$(call remove,$(BONUS_OBJS),Removing the bonus objects of get_next_line,bonus objects of get_next_line)
+	@$(call remove,$(OBJ_DIR),Removing the objects of get_next_line,objects of get_next_line)
+	@$(call remove,$(OBJ_BONUS_DIR),Removing the bonus objects of get_next_line,bonus objects of get_next_line)
 
 fclean: clean
 	@$(call remove,$(NAME),Removing the library $(NAME))

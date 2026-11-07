@@ -3,6 +3,8 @@
 *.a
 a.out
 .buffer_size_*
+objects/
+objects_bonus/
 
 # editor and OS files
 .DS_Store

@@ -17,6 +17,8 @@ CC			= cc
 CFLAGS		= -Wall -Wextra -Werror
 AR			= ar rcs
 RM			= rm -f
+OBJ_DIR		= objects
+OBJ_BONUS_DIR	= objects_bonus
 
 # make BUFFER_SIZE=42 overrides the default from the header.
 # The stamp file name holds the value, so changing it rebuilds the objects.

@@ -13,7 +13,7 @@
 #ifndef GET_NEXT_LINE_H
 # define GET_NEXT_LINE_H
 
-# include "core/structs.h"
+# include "core/get_next_line_structs.h"
 
 /*FROM get_next_line.c*/
 char	*get_next_line(int fd);

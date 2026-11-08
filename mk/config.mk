@@ -23,7 +23,7 @@ SRC_DIR = ./sources
 OBJ_DIR = ./objects
 OBJ_BONUS_DIR = ./objects_bonus
 
-# make BUFFER_SIZE=42 overrides the default of include/core/defines.h.
+# make BUFFER_SIZE=42 overrides the default of include/core/get_next_line_defines.h.
 # The stamp file name holds the value, so changing it rebuilds the objects.
 ifdef BUFFER_SIZE
 CFLAGS += -D BUFFER_SIZE=$(BUFFER_SIZE)

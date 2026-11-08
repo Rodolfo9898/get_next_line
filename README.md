@@ -82,9 +82,9 @@ The code is laid out like this: one header, and the same sources for both librar
 
 ```
 include/get_next_line.h                  every prototype, grouped by file
-include/core/libs.h        system headers
-include/core/defines.h     BONUS_MODE (0 by default) and BUFFER_SIZE
-include/core/structs.h     t_stash
+include/core/get_next_line_libs.h        system headers
+include/core/get_next_line_defines.h     BONUS_MODE (0 by default) and BUFFER_SIZE
+include/core/get_next_line_structs.h     t_stash
 sources/get_next_line.c                  get_next_line() alone
 sources/get_next_line_utils.c            gnl_stash_clear, gnl_extract_line, gnl_read_until_newline
                                          (+ static gnl_stash_move, gnl_stash_reserve)

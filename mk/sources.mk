@@ -11,7 +11,7 @@
 # **************************************************************************** #
 
 # The same files are compiled for both libraries: make bonus adds
-# -D BONUS_MODE=1 (BONUS_FLAGS), see include/core/defines.h.
+# -D BONUS_MODE=1 (BONUS_FLAGS), see include/core/get_next_line_defines.h.
 SRCS = get_next_line.c get_next_line_utils.c get_next_line_bonus.c
 
 OBJS = $(addprefix $(OBJ_DIR)/,$(SRCS:.c=.o))

@@ -13,32 +13,21 @@
 #ifndef GET_NEXT_LINE_H
 # define GET_NEXT_LINE_H
 
-# ifndef BUFFER_SIZE
-#  define BUFFER_SIZE 42
-# endif
+# include "core/structs.h"
 
-# include <stdlib.h>
-# include <unistd.h>
-# include <limits.h>
+/*FROM get_next_line.c*/
+char	*get_next_line(int fd);
 
-/*
-** Bytes read but not returned yet: the len bytes starting at data + start.
-** cap is the size of the data allocation. fd is the descriptor those
-** bytes were read from.
-*/
-typedef struct s_stash
-{
-	char	*data;
-	size_t	start;
-	size_t	len;
-	size_t	cap;
-	int		fd;
-}	t_stash;
-
+/*FROM get_next_line_utils.c*/
 void	gnl_stash_clear(t_stash *stash);
-int		gnl_stash_reserve(t_stash *stash, size_t extra);
 char	*gnl_extract_line(t_stash *stash, size_t line_len);
 ssize_t	gnl_read_until_newline(int fd, t_stash *stash, size_t read_size);
-char	*get_next_line(int fd);
+
+/*
+** BONUS ENTRY POINT: declared in both builds because get_next_line calls it
+** under 'if (BONUS_MODE)', but only defined with -D BONUS_MODE=1.
+*/
+/*FROM get_next_line_bonus.c*/
+char	*gnl_bonus_get_next_line(int fd, t_stash **list);
 
 #endif

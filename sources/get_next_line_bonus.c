@@ -10,7 +10,9 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line_bonus.h"
+#include "../include/get_next_line.h"
+
+#if BONUS_MODE
 
 /*
 ** Returns the stash of fd, adding an empty one at the head of the list when
@@ -58,27 +60,26 @@ static void	gnl_remove_stash(t_stash **list, int fd)
 }
 
 /*
-** One stash per fd, kept in a list so that any fd the system hands out can
-** be read. A node only lives while its fd has bytes stored: it is removed as
-** soon as its buffer is freed (end of file, read error, closed fd), so a
-** file reopened on the same fd starts clean. After a malloc error in
-** gnl_extract_line() the buffer is kept, and so is the node.
+** BONUS ENTRY POINT, called by get_next_line() when BONUS_MODE is 1, after
+** it checked fd and BUFFER_SIZE. *list is the head of the stashes: one per
+** fd, so that any fd the system hands out can be read. A node only lives
+** while its fd has bytes stored: it is removed as soon as its buffer is
+** freed (end of file, read error, closed fd), so a file reopened on the same
+** fd starts clean. After a malloc error in gnl_extract_line() the buffer is
+** kept, and so is the node.
 */
-char	*get_next_line(int fd)
+char	*gnl_bonus_get_next_line(int fd, t_stash **list)
 {
-	static t_stash	*list;
-	t_stash			*stash;
-	ssize_t			line_len;
-	char			*line;
+	t_stash	*stash;
+	ssize_t	line_len;
+	char	*line;
 
-	if (fd < 0 || BUFFER_SIZE <= 0 || BUFFER_SIZE > INT_MAX)
-		return (NULL);
 	if (read(fd, 0, 0) < 0)
 	{
-		gnl_remove_stash(&list, fd);
+		gnl_remove_stash(list, fd);
 		return (NULL);
 	}
-	stash = gnl_get_stash(&list, fd);
+	stash = gnl_get_stash(list, fd);
 	if (!stash)
 		return (NULL);
 	line = NULL;
@@ -88,6 +89,8 @@ char	*get_next_line(int fd)
 	if (line_len > 0)
 		line = gnl_extract_line(stash, line_len);
 	if (!stash->data)
-		gnl_remove_stash(&list, fd);
+		gnl_remove_stash(list, fd);
 	return (line);
 }
+
+#endif

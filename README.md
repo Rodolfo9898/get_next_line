@@ -14,7 +14,7 @@ Each call returns the next line, including its terminating `\n`, except for a la
 
 The goal of the project is to learn about static variables, buffered reading with `read()`, and careful memory management. Only `read`, `malloc` and `free` are allowed.
 
-The bonus version (`*_bonus.c`/`*_bonus.h`) can read from several file descriptors at the same time, for example fd 3, then 4, then 3 again, without mixing up their lines. It still uses a single static variable.
+The bonus version (`make bonus`) can read from several file descriptors at the same time, for example fd 3, then 4, then 3 again, without mixing up their lines. It still uses a single static variable.
 
 ## Instructions
 
@@ -26,7 +26,7 @@ make bonus              # builds get_next_line_bonus.a (several fds at once)
 make BUFFER_SIZE=42     # rebuild with another buffer size
 make clean / fclean     # remove objects / objects and archives
 
-cc -Wall -Wextra -Werror main.c get_next_line.a
+cc -Wall -Wextra -Werror -I include main.c get_next_line.a
 ```
 
 The output is coloured (`mk/colors.mk`): commands in green, errors in red, warnings in
@@ -37,10 +37,10 @@ Or compile the sources directly together with your own `main`:
 
 ```sh
 # mandatory part
-cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 get_next_line.c get_next_line_utils.c main.c
+cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 -I include sources/*.c main.c
 
-# bonus part (several fds at once)
-cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 get_next_line_bonus.c get_next_line_utils_bonus.c main.c
+# bonus part (several fds at once): the same files, built with BONUS_MODE=1
+cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 -D BONUS_MODE=1 -I include sources/*.c main.c
 ```
 
 `BUFFER_SIZE` is the number of bytes asked from `read()` each time. It is optional and defaults to 42. A value of 0 or less makes the function return `NULL`.
@@ -78,7 +78,21 @@ int	main(int argc, char **argv)
 
 `read()` returns blocks of `BUFFER_SIZE` bytes that do not line up with lines. One block can hold several lines, or only part of one. What was read past the end of the returned line must therefore survive until the next call. It is kept in a **static "stash"**: a single `t_stash` in the mandatory part, and in the bonus a linked list of `t_stash` nodes, one per fd that has bytes stored, reached from one static pointer. The list has no fixed size, so any fd the system hands out works (a fixed array would have to guess the fd limit, which Linux sets at run time). A node is added on the first call for its fd and removed as soon as its buffer is freed, so finished fds cost nothing. A stash is a growable buffer: `data` is the allocation, `cap` its size, and the bytes not returned yet are the `len` bytes starting at `data + start`.
 
-`get_next_line()` is the only function in `get_next_line.c`. `get_next_line_bonus.c` adds two static list helpers: `gnl_get_stash` (find or add the node of an fd) and `gnl_remove_stash` (unlink and free it). The four stash helpers live in `get_next_line_utils.c` (and `get_next_line_utils_bonus.c`) and are declared in the header.
+The code is laid out like this: one header, and the same sources for both libraries.
+
+```
+include/get_next_line.h                  every prototype, grouped by file
+include/core/libs.h        system headers
+include/core/defines.h     BONUS_MODE (0 by default) and BUFFER_SIZE
+include/core/structs.h     t_stash
+sources/get_next_line.c                  get_next_line() alone
+sources/get_next_line_utils.c            gnl_stash_clear, gnl_extract_line, gnl_read_until_newline
+                                         (+ static gnl_stash_move, gnl_stash_reserve)
+sources/get_next_line_bonus.c            only with BONUS_MODE: gnl_bonus_get_next_line
+                                         (+ static gnl_get_stash, gnl_remove_stash)
+```
+
+`make bonus` compiles the same files with `-D BONUS_MODE=1` (objects in `objects_bonus/`). After checking `fd` and `BUFFER_SIZE`, `get_next_line()` then hands over to `gnl_bonus_get_next_line()` under `if (BONUS_MODE)`. That function is declared in both builds and defined only in the bonus one; in the mandatory build the branch is dead, and the compiler drops the call. Both builds have a single static variable, the `t_stash` of `get_next_line()`: in the bonus, its `next` field is the head of the list of stashes, one per fd. `gnl_get_stash` finds or adds the node of an fd, `gnl_remove_stash` unlinks and frees it.
 
 Each call to `get_next_line(fd)`:
 

@@ -1,30 +1,26 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line_bonus.h                              :+:      :+:    :+:   */
+/*   structs.h                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: rperez-t <rperez-t@student.42belgium.be>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/12/15 14:04:40 by rperez-t          #+#    #+#             */
-/*   Updated: 2026/11/03 22:58:06 by rperez-t         ###   ########.fr       */
+/*   Created: 2026/11/08 13:22:24 by rperez-t          #+#    #+#             */
+/*   Updated: 2026/11/08 13:22:24 by rperez-t         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef GET_NEXT_LINE_BONUS_H
-# define GET_NEXT_LINE_BONUS_H
+#ifndef STRUCTS_H
+# define STRUCTS_H
 
-# include <stdlib.h>
-# include <unistd.h>
-# include <limits.h>
-
-# ifndef BUFFER_SIZE
-#  define BUFFER_SIZE 42
-# endif
+# include "libs.h"
+# include "defines.h"
 
 /*
 ** Bytes read but not returned yet: the len bytes starting at data + start.
 ** cap is the size of the data allocation. fd is the descriptor those
-** bytes were read from, and next links the stashes of the other fds.
+** bytes were read from. next links the stashes of the other fds in the
+** bonus (one per fd); the mandatory part keeps a single stash.
 */
 typedef struct s_stash
 {
@@ -35,11 +31,5 @@ typedef struct s_stash
 	int				fd;
 	struct s_stash	*next;
 }	t_stash;
-
-void	gnl_stash_clear(t_stash *stash);
-int		gnl_stash_reserve(t_stash *stash, size_t extra);
-char	*gnl_extract_line(t_stash *stash, size_t line_len);
-ssize_t	gnl_read_until_newline(int fd, t_stash *stash, size_t read_size);
-char	*get_next_line(int fd);
 
 #endif

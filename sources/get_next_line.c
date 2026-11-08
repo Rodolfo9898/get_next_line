@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line.h"
+#include "../include/get_next_line.h"
 
 /*
 ** The stash only ever holds bytes read from stash.fd. read(fd, 0, 0) tells
@@ -20,6 +20,9 @@
 ** - fd unreadable and fd != stash.fd: keep the bytes;
 ** - fd readable and fd != stash.fd: drop the bytes before reading, so two
 **   fds never mix (reading several fds at once is the bonus).
+** stash is the only static variable of both builds: with make bonus,
+** stash.next is the head of the list of stashes, one per fd, and
+** gnl_bonus_get_next_line() does the work.
 */
 char	*get_next_line(int fd)
 {
@@ -28,6 +31,8 @@ char	*get_next_line(int fd)
 
 	if (fd < 0 || BUFFER_SIZE <= 0 || BUFFER_SIZE > INT_MAX)
 		return (NULL);
+	if (BONUS_MODE)
+		return (gnl_bonus_get_next_line(fd, &stash.next));
 	if (read(fd, 0, 0) < 0)
 	{
 		if (fd == stash.fd)

@@ -24,20 +24,20 @@ bonus: $(BONUS_NAME)
 $(BONUS_NAME): $(BONUS_OBJS)
 	@$(call run,$(AR) $(BONUS_NAME) $(BONUS_OBJS))
 
-$(OBJS): get_next_line.h $(STAMP)
-$(BONUS_OBJS): get_next_line_bonus.h $(STAMP)
+# The headers each object uses come from its .d file (DEPFLAGS).
+$(OBJS) $(BONUS_OBJS): $(STAMP)
 
 $(STAMP):
 	@$(RM) .buffer_size_*
 	@touch $@
 
-$(OBJ_DIR)/%.o: %.c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
-	@$(call run,$(CC) $(CFLAGS) -c $< -o $@)
+	@$(call run,$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@)
 
-$(OBJ_BONUS_DIR)/%.o: %.c
+$(OBJ_BONUS_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
-	@$(call run,$(CC) $(CFLAGS) -c $< -o $@)
+	@$(call run,$(CC) $(CFLAGS) $(BONUS_FLAGS) $(DEPFLAGS) -c $< -o $@)
 
 clean:
 	@$(call remove,$(OBJ_DIR),Removing the objects of get_next_line,objects of get_next_line)
@@ -51,3 +51,5 @@ fclean: clean
 re: fclean all
 
 .PHONY: all bonus clean fclean re
+
+-include $(DEP_FILES)

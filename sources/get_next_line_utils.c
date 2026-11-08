@@ -1,25 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line_utils_bonus.c                        :+:      :+:    :+:   */
+/*   get_next_line_utils.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: rperez-t <rperez-t@student.42belgium.be>   +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/12/15 14:05:04 by rperez-t          #+#    #+#             */
+/*   Created: 2023/12/11 16:14:32 by rperez-t          #+#    #+#             */
 /*   Updated: 2026/11/03 22:58:06 by rperez-t         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line_bonus.h"
-
-void	gnl_stash_clear(t_stash *stash)
-{
-	free(stash->data);
-	stash->data = NULL;
-	stash->start = 0;
-	stash->len = 0;
-	stash->cap = 0;
-}
+#include "../include/get_next_line.h"
 
 /*
 ** Moves the stored bytes to the start of new_data, which is either a new
@@ -55,7 +46,7 @@ static void	gnl_stash_move(t_stash *stash, char *new_data)
 ** need is capped at a quarter of the largest size_t, so 4 * need cannot
 ** overflow. Returns 0, with the stash untouched, if a grow is impossible.
 */
-int	gnl_stash_reserve(t_stash *stash, size_t extra)
+static int	gnl_stash_reserve(t_stash *stash, size_t extra)
 {
 	char	*new_data;
 	size_t	need;
@@ -78,6 +69,15 @@ int	gnl_stash_reserve(t_stash *stash, size_t extra)
 	if (stash->start + need > stash->cap)
 		gnl_stash_move(stash, stash->data);
 	return (1);
+}
+
+void	gnl_stash_clear(t_stash *stash)
+{
+	free(stash->data);
+	stash->data = NULL;
+	stash->start = 0;
+	stash->len = 0;
+	stash->cap = 0;
 }
 
 /*

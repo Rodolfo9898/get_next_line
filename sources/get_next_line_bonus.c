@@ -60,7 +60,7 @@ static void	gnl_remove_stash(t_stash **list, int fd)
 }
 
 /*
-** BONUS ENTRY POINT, called by get_next_line() when BONUS_MODE is 1, after
+** Bonus entry point, called by get_next_line() when BONUS_MODE is 1, after
 ** it checked fd and BUFFER_SIZE. *list is the head of the stashes: one per
 ** fd, so that any fd the system hands out can be read. A node only lives
 ** while its fd has bytes stored: it is removed as soon as its buffer is

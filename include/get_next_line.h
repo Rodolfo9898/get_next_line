@@ -24,7 +24,7 @@ char	*gnl_extract_line(t_stash *stash, size_t line_len);
 ssize_t	gnl_read_until_newline(int fd, t_stash *stash, size_t read_size);
 
 /*
-** BONUS ENTRY POINT: declared in both builds because get_next_line calls it
+** Bonus entry point: declared in both builds because get_next_line calls it
 ** under 'if (BONUS_MODE)', but only defined with -D BONUS_MODE=1.
 */
 /* From get_next_line_bonus.c */

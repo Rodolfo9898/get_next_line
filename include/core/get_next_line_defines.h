@@ -13,12 +13,12 @@
 #ifndef GET_NEXT_LINE_DEFINES_H
 # define GET_NEXT_LINE_DEFINES_H
 
-/*BONUS BUILD: make bonus compiles every file with -D BONUS_MODE=1*/
+/* Bonus build: make bonus compiles every file with -D BONUS_MODE=1 */
 # ifndef BONUS_MODE
 #  define BONUS_MODE 0
 # endif
 
-/*BYTES ASKED FROM read() EACH TIME: make BUFFER_SIZE=n overrides it*/
+/* Bytes asked from read() each time: make BUFFER_SIZE=n overrides it */
 # ifndef BUFFER_SIZE
 #  define BUFFER_SIZE 42
 # endif
